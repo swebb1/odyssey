@@ -27,7 +27,8 @@ shinyServer(function(input, output,session) {
     bedGRList<-list()
     if(length(input$bedFiles>0)){
       for(i in 1:length(input$bedFiles)){
-        b<-readBed(input$bedFiles[i])  ##Maybe switch to read generic???
+        #b<-readGeneric(input$bedFiles[i],keep.all.metadata = T,header = T)  ##Maybe switch to read generic???
+        b<-readBed(input$bedFiles[i])
         n<-basename(input$bedFiles[i])
         bedGRList[[n]]<-b
       }
@@ -180,7 +181,7 @@ shinyServer(function(input, output,session) {
       m$addBigWig(input$seqplots_bwIn[i])
     }
     plotset<-getPlotSetArray(tracks=m,features=bedGRList()[input$seqplots_bedIn],refgenome = input$seqplots_genome,
-                             bin = input$seqplots_bin,rm0 = F,ignore_strand = F,
+                             bin = input$seqplots_bin,rm0 = input$seqplots_rm,ignore_strand = input$seqplots_ignorestrand,
                              xmin = input$seqplots_xmin,xmax = input$seqplots_xmax,xanchored = input$seqplots_anchored,
                              type = input$seqplots_type,add_heatmap = T,stat = input$seqplots_stat)
     return(plotset)
@@ -193,7 +194,23 @@ shinyServer(function(input, output,session) {
     else{
       plotset<-getPlotSet()
       if(input$seqplots_output=="profile"){
-        plotAverage(plotset)
+        ylim=NULL
+        labels=NULL
+        if(input$seqplots_manual & !is.null(input$seqplots_ylim_min) & !is.null(input$seqplots_ylim_max)){
+          ylim=c(input$seqplots_ylim_min,input$seqplots_ylim_max)
+        }
+        if(input$seqplots_setlabels){
+          labels=unlist(strsplit(input$seqplots_labels,split = ","))
+        }
+        plotAverage(plotset,keepratio = input$seqplots_keepratio,
+                    #ylim =c(input$seqplots_ylim_min,input$seqplots_ylim_max),
+                    ylim =ylim,
+                    main = input$seqplots_main,xlab = input$seqplots_xlab,
+                    ylab =input$seqplots_ylab,plotScale = input$seqplots_scale,
+                    error.estimates = input$seqplots_error,legend_pos = input$seqplots_leg,
+                    ln.v = input$seqplots_vl,ln.h = input$seqplots_hl,
+                    pointsize = input$seqplots_point,colvec = cols,labels=labels
+                    ) ##need to add labels
       }
       else{
         plotHeatmap(plotset)

@@ -10,6 +10,8 @@ Genome browser:
 
 Genomes:
 Add txdb etc from different releases to get genes or exons.....
+Make genome windows
+Correlate bigWigs??
 GO analysis
 Annotation relative to genes etc??
 
