@@ -1,0 +1,25 @@
+Input:
+Read in bed as GR straight away and use function to convert to df for table.
+Probably need to switch to read generic function to get extra columns. First 6 must be bed format though?
+GTF files?
+
+Genome browser:
+1. Show regions across genome (ideoviz?)
+2. Show tracks at specific regions (gviz)
+
+
+Genomes:
+Add txdb etc from different releases to get genes or exons.....
+GO analysis
+Annotation relative to genes etc??
+
+Intersect and overlap multiple beds:
+Possible to do intersections, filtering etc.
+Bedtools etc..
+
+
+
+bigWigAverageOverBed add to granges?
+
+Could just use galaxy with wrappers for seqplots but won't be interactive
+EpivizR (slow and crashes)
