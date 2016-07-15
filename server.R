@@ -151,12 +151,7 @@ shinyServer(function(input, output,session) {
       }
     }
     #DataTrack(range=cgcf,genome="mm9",name="mCG %",fontsize=15,type="mountain",col.mountain="blue",fill.mountain=c("green","grey"),ylim=c(0,100))
-    #biomTrack_cyp3a25 <- BiomartGeneRegionTrack(genome = "mm9",name = "ENSEMBL",gene="ENSMUSG00000029630",fontsize=40,
-    #                                            fill="black",col.line="black",col="black")
-    #biomtrack<-BiomartGeneRegionTrack(genome ="mm9",name = "ENSEMBL",gene="ENSMUSG00000031393",
-    #                                  fontsize=40,fill="black",col.line="black",col="black")
     plotTracks(tracks)
-    #,itrack,btrack,bwtrack,biomtrack))
   })    
   
   ##SeqPlots
@@ -169,6 +164,7 @@ shinyServer(function(input, output,session) {
       conditionalPanel(
         condition = "input.seqplots_motif == true",
         textInput("seqplots_motifIn","Sequence motif:",""),
+        numericInput("seqplots_window","Window size",value = 200),
         checkboxInput("seqplots_revcomp","Include reverse complement",value = T)
       )
     )
@@ -178,7 +174,7 @@ shinyServer(function(input, output,session) {
     m<-MotifSetup()
     tracks<-NULL
     if(input$seqplots_motif  & input$seqplots_motifIn!=""){
-      m$addMotif(input$seqplots_motifIn,window=input$seqplots_bin,heatmap=T,revcomp=input$seqplots_revcomp,genome=input$seqplots_genome) ##parse strsplit for multiple motifs
+      m$addMotif(input$seqplots_motifIn,window=input$seqplots_window,heatmap=T,revcomp=input$seqplots_revcomp,genome=input$seqplots_genome) ##parse strsplit for multiple motifs
     }
     for(i in 1:length(input$seqplots_bwIn)){
       m$addBigWig(input$seqplots_bwIn[i])

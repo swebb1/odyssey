@@ -74,18 +74,18 @@ shinyUI(dashboardPage(
      tabItem(tabName="seqplots",
              fluidRow(
                box(
-                 title="Seqplots",width = 12,status="primary",solidHeader=TRUE,
-                 plotOutput("seqplots_plot")   
+                 title="Seqplots",width = 9,status="primary",solidHeader=TRUE,
+                 plotOutput("seqplots_plot")
+               ),
+               box(
+                 title="Data",width = 3,status="warning",solidHeader=TRUE,
+                 uiOutput("seqplots_controls")
                )
              ),
              fluidRow(
                box(
-                 title="Data",width = 6,status="warning",solidHeader=TRUE,
-                 div(style = 'overflow-y: scroll',uiOutput("seqplots_controls"))
-               ),
-               box(
-                 title="Controls",width = 6,status="warning",solidHeader=TRUE,
-                 div(style = 'overflow-y: scroll',
+                 title="Controls",width = 12,status="warning",solidHeader=TRUE,height ="400px",
+                 div(style = 'overflow-y: scroll; max-height: 300px; max-width: 400px',
                    selectInput("seqplots_output","Plot type:",choices=c("profile","heatmap")),
                    selectInput("seqplots_type","Select region to plot around",choices=c("pf","ef","mf","af")),
                    numericInput("seqplots_xmin","Upstream:",1000),
