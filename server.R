@@ -111,7 +111,7 @@ shinyServer(function(input, output,session) {
       selectInput("gviz_genome","Select genome:",choices=genomes),
       selectInput("gviz_select","Select region by:",choices=c("Coordinates","Gene ID")),
       conditionalPanel(condition="input.gviz_select == 'Coordinates'",
-        selectInput("gviz_chr","Chromosome:",choices=Seqinfo(genome=input$gviz_genome)@seqnames)
+        selectInput("gviz_chr","Chromosome:",choices=Seqinfo(genome=input$gviz_genome)@seqnames),
         numericInput("gviz_start","Region start:",1000),
         numericInput("gviz_end","Region end:",2000)
       ),
