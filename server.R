@@ -1,20 +1,3 @@
-library(shiny)
-library(genomation)
-library(GenomicRanges)
-library(GenomicFeatures)
-library(seqplots)
-library(IdeoViz)
-library(Gviz)
-library(RColorBrewer)
-
-#set maximum file size
-options(shiny.maxRequestSize=100*1024^2) #100Mb
-
-#setup a color pallete choice on main dashboard or per tool?
-cols<-brewer.pal(9,"Set1")
-
-#available genomes
-genomes<-c("sacCer3","hg19","mm9")
 
 shinyServer(function(input, output,session) {
   
@@ -44,12 +27,14 @@ shinyServer(function(input, output,session) {
   })
   
   observeEvent(input$list_dir, {
+    withProgress(message="Loading...",value=0,{
     output$inFiles <- renderUI({
       tagList(  
         checkboxGroupInput('bedFiles', 'Select bed files (.bed):',get_files(pattern="*.bed")),
         checkboxGroupInput('rdsFiles', 'Select R files (.rds):',get_files(pattern="*.rds")),
         checkboxGroupInput('bwFiles', 'Select bigWig files (.bw):',get_files(pattern="*.bw"))
       )
+    })
     })
   })
   
@@ -120,12 +105,21 @@ shinyServer(function(input, output,session) {
   })
   
   #Gviz
+  ###Add labels, change colours, better labelling of features,search by symbol
   output$gviz_controls<-renderUI({
     tagList(
       selectInput("gviz_genome","Select genome:",choices=genomes),
-      textInput("gviz_chr","Chromosome:","chrII"),
-      numericInput("gviz_start","Region start:",1000),
-      numericInput("gviz_end","Region start:",2000),
+      selectInput("gviz_select","Select region by:",choices=c("Coordinates","Gene ID")),
+      conditionalPanel(condition="input.gviz_select == 'Coordinates'",
+        selectInput("gviz_chr","Chromosome:",choices=Seqinfo(genome=input$gviz_genome)@seqnames)
+        numericInput("gviz_start","Region start:",1000),
+        numericInput("gviz_end","Region end:",2000)
+      ),
+      conditionalPanel(condition="input.gviz_select == 'Gene ID'",
+                       textInput("gviz_gene","Ensembl gene ID:","YBL087C"),
+                       numericInput("gviz_left","Extend left:",0),
+                       numericInput("gviz_right","Extend right:",0)
+      ),
       selectInput("gviz_bedIn","Select interval files",choices = names(bedGRList()),multiple = T),
       selectInput("gviz_bwIn","Select bw files",choices = input$bwFiles,multiple=T)
     )
@@ -133,26 +127,41 @@ shinyServer(function(input, output,session) {
   
   output$gviz_plot<-renderPlot({
     gtrack <- GenomeAxisTrack(fontsize=15)
-    biomTrack <- BiomartGeneRegionTrack(genome = input$gviz_genome,
-                                        chromosome = input$gviz_chr, start = input$gviz_start, end = input$gviz_end,
-                                        name = "ENSEMBL")
-    tracks<-list(gtrack,biomTrack)
+    ideoTrack <- IdeogramTrack(genome =input$gviz_genome)
+    if(input$gviz_select=="Coordinates"){
+      biomTrack <- BiomartGeneRegionTrack(genome = input$gviz_genome,
+                                          chromosome = input$gviz_chr, start = input$gviz_start, end = input$gviz_end,
+                                          name = "ENSEMBL",col.line = NULL, col = NULL,showId=T,just.group="above")
+    }
+    else{
+      biomTrack <- BiomartGeneRegionTrack(genome = input$gviz_genome,
+                                          gene=input$gviz_gene,name = "ENSEMBL",col.line = NULL, 
+                                          col = NULL,showId=T,just.group="above")
+    }
+    tracks<-list(ideoTrack,gtrack,biomTrack)
     #itrack <- IdeogramTrack(chromosome=input$gviz_chr ,genome=input$gviz_genome)
     blist <- bedGRList()
     if(length(input$gviz_bedIn>0)){
       for(i in 1:length(input$gviz_bedIn)){
-        btrack<-AnnotationTrack(blist[[basename(input$gviz_bedIn[i])]],name=basename((input$gviz_bedIn[i])))
+        btrack<-AnnotationTrack(blist[[basename(input$gviz_bedIn[i])]],name=basename((input$gviz_bedIn[i])),
+                                showFeatureId=T,showOverplotting=T,just.group="above")
         tracks<-c(tracks,btrack)
       }
     }
-    if(length(input$gviz_bedIn>0)){
+    if(length(input$gviz_bwIn>0)){
       for(i in 1:length(input$gviz_bwIn)){
-        bwtrack<-DataTrack(range=input$gviz_bwIn[i],genome=input$gviz_genome,name=basename(input$gviz_bwIn[i]),fontsize=15,type="hist")
+        bwtrack<-DataTrack(range=input$gviz_bwIn[i],genome=input$gviz_genome,name=basename(input$gviz_bwIn[i]),
+                           fontsize=15,type="hist")
         tracks<-c(tracks,bwtrack)
       }
     }
     #DataTrack(range=cgcf,genome="mm9",name="mCG %",fontsize=15,type="mountain",col.mountain="blue",fill.mountain=c("green","grey"),ylim=c(0,100))
-    plotTracks(tracks)
+    if(input$gviz_select=="Coordinates"){
+      plotTracks(tracks,from = input$gviz_start, to=input$gviz_end,chromosome = biomTrack@chromosome)
+    }
+    else{
+      plotTracks(tracks,from = biomTrack@start-input$gviz_left, to=biomTrack@end+input$gviz_right,chromosome = biomTrack@chromosome)
+    }
   })    
   
   ##SeqPlots
