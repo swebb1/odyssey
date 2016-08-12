@@ -1,7 +1,7 @@
-@import url('//fonts.googleapis.com/css?family=Lobster|Cabin:400,700');
+@import url('//fonts.googleapis.com/css?family=Orbitron|Cabin:400,700');
 
 .main-header .logo {
-  font-family: 'Lobster', cursive;
+  font-family: 'Orbitron';
   font-weight: 200;
   font-size: 40px;
 }

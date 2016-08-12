@@ -3,6 +3,9 @@ Read in bed as GR straight away and use function to convert to df for table.
 Probably need to switch to read generic function to get extra columns. First 6 must be bed format though?
 GTF files?
 
+Add label to files to be used in tools
+Set to pwd by default?
+
 Genome browser:
 1. Show regions across genome (ideoviz?)
 2. Show tracks at specific regions (gviz)

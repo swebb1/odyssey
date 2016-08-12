@@ -34,6 +34,12 @@ shinyUI(dashboardPage(
                  box(
                    title="Select files",width = NULL,status="warning",solidHeader=TRUE,
                    uiOutput("inFiles")
+                 ),
+                 box(
+                   title="Relabel files",width = NULL,status="warning",solidHeader=TRUE,
+                   uiOutput("labels"),
+                   actionButton("saveLabels","Save",icon = shiny::icon("refresh")),
+                   textOutput("lsave")
                  )
              )
      ),
@@ -87,7 +93,7 @@ shinyUI(dashboardPage(
                    title="Parameters",width = 6,status="warning",solidHeader=TRUE,height ="400px",
                    div(style = 'overflow-y: scroll; max-height: 300px; max-width: 400px',
                      selectInput("seqplots_output","Plot type:",choices=c("profile","heatmap")),
-                     selectInput("seqplots_type","Select region to plot around",choices=c("pf","ef","mf","af")),
+                     selectInput("seqplots_type","Select region to plot around",choices=c("Start of feature","Midpoint","End of feature","Anchor feature")),
                      numericInput("seqplots_xmin","Upstream:",1000),
                      numericInput("seqplots_xmax","Downstream:",1000),
                      numericInput("seqplots_anchored","Anchored size:",1000),
@@ -116,7 +122,7 @@ shinyUI(dashboardPage(
                        checkboxInput("seqplots_setlabels","Use custom legend labels",F),
                        textInput("seqplots_labels","Enter legend labels",""),
                        helpText("Enter labels separated by commas"),
-                       checkboxInput("seqplots_vl","Show vertical guidelines",F),
+                       checkboxInput("seqplots_vl","Show vertical guidelines",T),
                        numericInput("seqplots_hl","Include horizontal guideline",NULL),
                        numericInput("seqplots_point","Plot point size",12)
                    )

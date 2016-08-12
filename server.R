@@ -1,5 +1,7 @@
 
 shinyServer(function(input, output,session) {
+
+  values <- reactiveValues(label_list=list())
   
   get_files<-function(pattern){
     dir<-input$dir
@@ -12,7 +14,7 @@ shinyServer(function(input, output,session) {
       for(i in 1:length(input$bedFiles)){
         #b<-readGeneric(input$bedFiles[i],keep.all.metadata = T,header = T)  ##Maybe switch to read generic???
         b<-readBed(input$bedFiles[i])
-        n<-basename(input$bedFiles[i])
+        n<-values$label_list[[input$bedFiles[i]]]
         bedGRList[[n]]<-b
       }
     }
@@ -26,6 +28,18 @@ shinyServer(function(input, output,session) {
     bedGRList
   })
   
+  bwList<-reactive({
+    bwList<-list()
+    if(length(input$bwFiles>0)){
+      for(i in 1:length(input$bwFiles)){
+        b<-input$bwFiles[i]
+        n<-values$label_list[[input$bwFiles[i]]]
+        bwList[[n]]<-b
+      }
+    }
+    bwList
+  })
+  
   observeEvent(input$list_dir, {
     withProgress(message="Loading...",value=0,{
     output$inFiles <- renderUI({
@@ -36,6 +50,60 @@ shinyServer(function(input, output,session) {
       )
     })
     })
+  })
+  
+  ##Reduce filenames to labels
+  observeEvent(input$saveLabels,{ 
+    if(!is.null(input$bedFiles)){
+      for(i in 1:length(input$bedFiles)){
+        eval(parse(text=paste0("values$label_list[['",input$bedFiles[i],"']]<-'",eval(parse(text=paste0("input$bedLabel",i))),"'")))
+      }
+    }
+    if(!is.null(input$rdsFiles)){
+      for(i in 1:length(input$rdsFiles)){
+        eval(parse(text=paste0("values$label_list[['",input$rdsFiles[i],"']]<-'",eval(parse(text=paste0("input$rdsLabel",i))),"'")))
+      }
+    }
+    if(!is.null(input$bwFiles)){
+      for(i in 1:length(input$bwFiles)){
+        eval(parse(text=paste0("values$label_list[['",input$bwFiles[i],"']]<-'",eval(parse(text=paste0("input$bwLabel",i))),"'")))
+      }
+    }
+  })
+  
+  lname<-function(n){
+    if(!is.null(values$label_list[[n]])){
+      return(values$label_list[[n]])
+    }
+    else{
+      return(basename(n))
+    }
+  }
+  
+  output$labels<-renderUI({
+    if(is.null(input$bedFiles) & is.null(input$rdsFiles) & is.null(input$bwFiles)){
+      return(NULL)
+    }
+    llist<-tagList()
+    if(!is.null(input$bedFiles)){
+      for(i in 1:length(input$bedFiles)){
+        label<-textInput(paste0("bedLabel",i),label = input$bedFiles[i],value = lname(input$bedFiles[i]))
+        llist[[i]]<-label
+      }
+    }
+    if(!is.null(input$rdsFiles)){
+      for(i in 1:length(input$rdsFiles)){
+        label<-textInput(paste0("rdsLabel",i),label = input$rdsFiles[i],value = lname(input$rdsFiles[i]))
+        llist[[length(input$bedFiles)+i]]<-label
+      }
+    }
+    if(!is.null(input$bwFiles)){
+      for(i in 1:length(input$bwFiles)){
+        label<-textInput(paste0("bwLabel",i),label = input$bwFiles[i],value = lname(input$bwFiles[i]))
+        llist[[length(input$bedFiles)+length(input$rdsFiles)+i]]<-label
+      }
+    }
+    llist
   })
   
   ##data table
@@ -111,7 +179,7 @@ shinyServer(function(input, output,session) {
       selectInput("gviz_genome","Select genome:",choices=genomes),
       selectInput("gviz_select","Select region by:",choices=c("Coordinates","Gene ID")),
       conditionalPanel(condition="input.gviz_select == 'Coordinates'",
-        selectInput("gviz_chr","Chromosome:",choices=Seqinfo(genome=input$gviz_genome)@seqnames),
+        textInput("gviz_chr","Chromosome:","chrII"),
         numericInput("gviz_start","Region start:",1000),
         numericInput("gviz_end","Region end:",2000)
       ),
@@ -121,7 +189,7 @@ shinyServer(function(input, output,session) {
                        numericInput("gviz_right","Extend right:",0)
       ),
       selectInput("gviz_bedIn","Select interval files",choices = names(bedGRList()),multiple = T),
-      selectInput("gviz_bwIn","Select bw files",choices = input$bwFiles,multiple=T)
+      selectInput("gviz_bwIn","Select bw files",choices = names(bwList()),multiple=T)
     )
   })
   
@@ -141,6 +209,7 @@ shinyServer(function(input, output,session) {
     tracks<-list(ideoTrack,gtrack,biomTrack)
     #itrack <- IdeogramTrack(chromosome=input$gviz_chr ,genome=input$gviz_genome)
     blist <- bedGRList()
+    bw_list<- bwList()
     if(length(input$gviz_bedIn>0)){
       for(i in 1:length(input$gviz_bedIn)){
         btrack<-AnnotationTrack(blist[[basename(input$gviz_bedIn[i])]],name=basename((input$gviz_bedIn[i])),
@@ -150,7 +219,7 @@ shinyServer(function(input, output,session) {
     }
     if(length(input$gviz_bwIn>0)){
       for(i in 1:length(input$gviz_bwIn)){
-        bwtrack<-DataTrack(range=input$gviz_bwIn[i],genome=input$gviz_genome,name=basename(input$gviz_bwIn[i]),
+        bwtrack<-DataTrack(range=bw_list[[input$gviz_bwIn[i]]],genome=input$gviz_genome,name=basename(input$gviz_bwIn[i]),
                            fontsize=15,type="hist")
         tracks<-c(tracks,bwtrack)
       }
@@ -169,11 +238,12 @@ shinyServer(function(input, output,session) {
     tagList(
       selectInput("seqplots_genome","Select genome:",choices=genomes),
       selectInput("seqplots_bedIn","Select bed files",choices = names(bedGRList()),multiple = T),
-      selectInput("seqplots_bwIn","Select bw files",choices = input$bwFiles,multiple=T),
-      checkboxInput("seqplots_motif",label = "Add sequence motif",value = F),
+      selectInput("seqplots_bwIn","Select bw files",choices = names(bwList()),multiple=T),
+      checkboxInput("seqplots_motif",label = "Add sequence motifs",value = F),
       conditionalPanel(
         condition = "input.seqplots_motif == true",
-        textInput("seqplots_motifIn","Sequence motif:",""),
+        textInput("seqplots_motifIn","Sequence motifs:",""),
+        helpText("Separate multiple motifs with a comma."),
         numericInput("seqplots_window","Window size",value = 200),
         checkboxInput("seqplots_revcomp","Include reverse complement",value = T)
       )
@@ -181,19 +251,27 @@ shinyServer(function(input, output,session) {
   })
   
   getPlotSet<-reactive({
+    withProgress(message="Calculating...",value=0,{
     m<-MotifSetup()
     tracks<-NULL
     if(input$seqplots_motif  & input$seqplots_motifIn!=""){
-      m$addMotif(input$seqplots_motifIn,window=input$seqplots_window,heatmap=T,revcomp=input$seqplots_revcomp,genome=input$seqplots_genome) ##parse strsplit for multiple motifs
+      mlist<-unlist(strsplit(input$seqplots_motifIn,split = ","))
+      for(i in 1:length(mlist)){
+        m$addMotif(mlist[i],window=input$seqplots_window,heatmap=T,revcomp=input$seqplots_revcomp,genome=input$seqplots_genome) ##parse strsplit for multiple motifs
+      }
     }
-    for(i in 1:length(input$seqplots_bwIn)){
-      m$addBigWig(input$seqplots_bwIn[i])
+    if(!is.null(input$seqplots_bwIn)){
+      for(i in 1:length(input$seqplots_bwIn)){
+        m$addBigWig(bwList()[[input$seqplots_bwIn[i]]])
+      }
     }
+    seqplots_type<-switch(input$seqplots_type,"Start of feature"="pf","Midpoint"="mf","End of feature"="ef","Anchor feature"="af")
     plotset<-getPlotSetArray(tracks=m,features=bedGRList()[input$seqplots_bedIn],refgenome = input$seqplots_genome,
                              bin = input$seqplots_bin,rm0 = input$seqplots_rm,ignore_strand = input$seqplots_ignorestrand,
                              xmin = input$seqplots_xmin,xmax = input$seqplots_xmax,xanchored = input$seqplots_anchored,
-                             type = input$seqplots_type,add_heatmap = T,stat = input$seqplots_stat)
+                             type = seqplots_type,add_heatmap = T,stat = input$seqplots_stat)
     return(plotset)
+    })
   })
   
   output$seqplots_plot<-renderPlot({
@@ -210,6 +288,21 @@ shinyServer(function(input, output,session) {
         }
         if(input$seqplots_setlabels){
           labels=unlist(strsplit(input$seqplots_labels,split = ","))
+        }
+        else{
+          if(input$seqplots_motif  & input$seqplots_motifIn!=""){
+          mlist<-unlist(strsplit(input$seqplots_motifIn,split = ","))
+          for(j in 1:length(mlist)){
+            for(i in 1:length(input$seqplots_bedIn)){
+              labels<-append(labels,paste0(mlist[j],"@",input$seqplots_bedIn[i]))
+            }
+          }
+          }
+          for(j in 1:length(input$seqplots_bwIn)){
+            for(i in 1:length(input$seqplots_bedIn)){
+              labels<-append(labels,paste0(input$seqplots_bwIn[j],"@",input$seqplots_bedIn[i]))
+            }
+          }
         }
         plotAverage(plotset,keepratio = input$seqplots_keepratio,
                     #ylim =c(input$seqplots_ylim_min,input$seqplots_ylim_max),
