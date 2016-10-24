@@ -246,11 +246,12 @@ shinyServer(function(input, output,session) {
         helpText("Separate multiple motifs with a comma."),
         numericInput("seqplots_window","Window size",value = 200),
         checkboxInput("seqplots_revcomp","Include reverse complement",value = T)
-      )
+      ),
+      actionButton("seqplots_plot","Plot",icon = shiny::icon("play"))
     )
   })
   
-  getPlotSet<-reactive({
+  getPlotSet<-eventReactive(input$seqplots_plot,{
     withProgress(message="Calculating...",value=0,{
     m<-MotifSetup()
     tracks<-NULL

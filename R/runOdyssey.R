@@ -3,9 +3,9 @@
 #' @export
 #' @examples
 #' This function runs the odyssey application.
-#' quest()
+#' odyssey()
 
-runQuest <- function() {
+runOdyssey <- function() {
   wd<<-getwd()
   appDir <- system.file("odyssey", package = "odyssey")
   if (appDir == "") {
