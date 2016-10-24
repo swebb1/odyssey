@@ -18,9 +18,7 @@ shinyUI(dashboardPage(
       )
   ),
   dashboardBody(
-   #tags$head(
-    #tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
-   #),
+   includeCSS("www/custom.css"),
    tabItems(
      tabItem(tabName="files",
                fluidRow(
