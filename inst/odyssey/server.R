@@ -14,6 +14,7 @@ shinyServer(function(input, output,session) {
       for(i in 1:length(input$bedFiles)){
         #b<-readGeneric(input$bedFiles[i],keep.all.metadata = T,header = T)  ##Maybe switch to read generic???
         b<-readBed(input$bedFiles[i])
+        if(is.null(values$label_list[[input$bedFiles[i]]])){values$label_list[[input$bedFiles[i]]]<-basename(input$bedFiles[i])}
         n<-values$label_list[[input$bedFiles[i]]]
         bedGRList[[n]]<-b
       }
@@ -21,7 +22,8 @@ shinyServer(function(input, output,session) {
     if(length(input$rdsFiles>0)){
       for(i in 1:length(input$rdsFiles)){
         gr<-readRDS(input$rdsFiles[i])
-        n<-basename(input$rdsFiles[i])
+        if(is.null(values$label_list[[input$rdsFiles[i]]])){values$label_list[[input$rdsFiles[i]]]<-basename(input$rdsFiles[i])}
+        n<-values$label_list[[input$rdsFiles[i]]]
         bedGRList[[n]]<-gr
       }
     }
@@ -33,6 +35,7 @@ shinyServer(function(input, output,session) {
     if(length(input$bwFiles>0)){
       for(i in 1:length(input$bwFiles)){
         b<-input$bwFiles[i]
+        if(is.null(values$label_list[[input$bwFiles[i]]])){values$label_list[[input$bwFiles[i]]]<-basename(input$bwFiles[i])}
         n<-values$label_list[[input$bwFiles[i]]]
         bwList[[n]]<-b
       }
@@ -299,7 +302,7 @@ shinyServer(function(input, output,session) {
   })
   
   output$seqplots_plot<-renderPlot({
-    if(length(input$seqplots_bedIn)==0 | length(input$seqplots_bwIn)==0 & input$seqplots_motif==F){
+    if(is.null(getPlotSet())){#(length(input$seqplots_bedIn)==0 | length(input$seqplots_bwIn)==0 & input$seqplots_motif==F){
       return(NULL)
     }
     else{
@@ -321,7 +324,7 @@ shinyServer(function(input, output,session) {
                     ) ##need to add labels
       }
       else{
-        plotHeatmap(plotset)
+        plotHeatmap(plotset,labels = labels())
       }
     }
   })
