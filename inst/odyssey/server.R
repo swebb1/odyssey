@@ -5,7 +5,7 @@ shinyServer(function(input, output,session) {
   
   get_files<-function(pattern){
     dir<-input$dir
-    file_list<-list.files(dir,include.dirs = T,recursive=T,pattern=pattern,full.names = T)
+    file_list<-list.files(dir,include.dirs = T,recursive=input$recursive,pattern=pattern,full.names = T)
   }
   
   bedGRList<-reactive({
@@ -275,6 +275,29 @@ shinyServer(function(input, output,session) {
     })
   })
   
+  labels<-eventReactive(input$seqplots_plot,{
+    labels=NULL
+    if(input$seqplots_setlabels){
+      labels=unlist(strsplit(input$seqplots_labels,split = ","))
+    }
+    else{
+      if(input$seqplots_motif  & input$seqplots_motifIn!=""){
+        mlist<-unlist(strsplit(input$seqplots_motifIn,split = ","))
+        for(j in 1:length(mlist)){
+          for(i in 1:length(input$seqplots_bedIn)){
+            labels<-append(labels,paste0(mlist[j],"@",input$seqplots_bedIn[i]))
+          }
+        }
+      }
+      for(j in 1:length(input$seqplots_bwIn)){
+        for(i in 1:length(input$seqplots_bedIn)){
+          labels<-append(labels,paste0(input$seqplots_bwIn[j],"@",input$seqplots_bedIn[i]))
+        }
+      }
+    }
+    return(labels)
+  })
+  
   output$seqplots_plot<-renderPlot({
     if(length(input$seqplots_bedIn)==0 | length(input$seqplots_bwIn)==0 & input$seqplots_motif==F){
       return(NULL)
@@ -283,27 +306,9 @@ shinyServer(function(input, output,session) {
       plotset<-getPlotSet()
       if(input$seqplots_output=="profile"){
         ylim=NULL
-        labels=NULL
+        labels=labels()
         if(input$seqplots_manual & !is.null(input$seqplots_ylim_min) & !is.null(input$seqplots_ylim_max)){
           ylim=c(input$seqplots_ylim_min,input$seqplots_ylim_max)
-        }
-        if(input$seqplots_setlabels){
-          labels=unlist(strsplit(input$seqplots_labels,split = ","))
-        }
-        else{
-          if(input$seqplots_motif  & input$seqplots_motifIn!=""){
-          mlist<-unlist(strsplit(input$seqplots_motifIn,split = ","))
-          for(j in 1:length(mlist)){
-            for(i in 1:length(input$seqplots_bedIn)){
-              labels<-append(labels,paste0(mlist[j],"@",input$seqplots_bedIn[i]))
-            }
-          }
-          }
-          for(j in 1:length(input$seqplots_bwIn)){
-            for(i in 1:length(input$seqplots_bedIn)){
-              labels<-append(labels,paste0(input$seqplots_bwIn[j],"@",input$seqplots_bedIn[i]))
-            }
-          }
         }
         plotAverage(plotset,keepratio = input$seqplots_keepratio,
                     #ylim =c(input$seqplots_ylim_min,input$seqplots_ylim_max),
