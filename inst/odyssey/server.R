@@ -43,15 +43,18 @@ shinyServer(function(input, output,session) {
     bwList
   })
   
-  observeEvent(input$list_dir, {
-    withProgress(message="Loading...",value=0,{
-    output$inFiles <- renderUI({
-      tagList(  
-        checkboxGroupInput('bedFiles', 'Select bed files (.bed):',get_files(pattern="*.bed")),
-        checkboxGroupInput('rdsFiles', 'Select R files (.rds):',get_files(pattern="*.rds")),
-        checkboxGroupInput('bwFiles', 'Select bigWig files (.bw):',get_files(pattern="*.bw"))
+  get_input_files<-eventReactive(input$list_dir, {
+      uilist<-tagList(  
+        checkboxGroupInput('bedFiles', 'Select bed files (.bed):',get_files(pattern="*.bed$")),
+        checkboxGroupInput('rdsFiles', 'Select R files (.rds):',get_files(pattern="*.gr.rds$")),
+        checkboxGroupInput('bwFiles', 'Select bigWig files (.bw):',get_files(pattern="*.bw$"))
       )
-    })
+      return(uilist)
+  })
+  
+  output$inFiles <- renderUI({
+    withProgress(message="Loading...",value=0,{
+      get_input_files()
     })
   })
   
@@ -147,7 +150,7 @@ shinyServer(function(input, output,session) {
   
   observeEvent(input$save, {
     gr<-rCode()
-    name<-paste0(input$dir,"/",input$save_name,".rds")
+    name<-paste0(input$dir,"/",input$save_name,"gr.rds")
     saveRDS(gr,name)
     files<-c(input$rdsFiles,name)
     updateCheckboxGroupInput(session,inputId="rdsFiles",choices=files,selected=files)

@@ -26,7 +26,8 @@ shinyUI(dashboardPage(
                    title="Load Files",width = NULL,status="primary",solidHeader=TRUE,
                    #htmlOutput("fileUI"),
                    #fileInput("file", "Input File",multiple = FALSE) ##May add upload file option)
-                   textInput("dir","Select file directory:",value="/homes/swebb/interactive_plotting/odyssey/inst/odyssey/test_data"),
+                   #textInput("dir","Select file directory:",value="/homes/swebb/interactive_plotting/odyssey/inst/odyssey/test_data"),
+                   textInput("dir","Select file directory:",value=wd),
                    checkboxInput("recursive",label = "Check folder recursively",value = F),
                    actionButton("list_dir","List",icon = shiny::icon("folder-open"))
                  ),
