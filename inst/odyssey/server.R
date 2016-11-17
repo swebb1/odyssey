@@ -1,13 +1,29 @@
 
 shinyServer(function(input, output,session) {
 
+  ##list of file labels (short names for display)
   values <- reactiveValues(label_list=list())
   
+  ##Get the input directory
+  #roots=c(home = '/homes/')
+  roots=c(home= '~')
+  shinyDirChoose(input, 'directory', roots = roots)
+  input_dir <- reactive({
+    id<-""
+    if(!is.null(input$directory)){
+      id<-parseDirPath(roots, input$directory)
+    }
+    return(id)
+  })
+  output$path <- renderText(input_dir())
+  
+  ##Get files function from input directory
   get_files<-function(pattern){
-    dir<-input$dir
+    dir<-input_dir()
     file_list<-list.files(dir,include.dirs = T,recursive=input$recursive,pattern=pattern,full.names = T)
   }
   
+  ##Create list of bed files or GR objects saved as .rds files
   bedGRList<-reactive({
     bedGRList<-list()
     if(length(input$bedFiles>0)){
@@ -30,6 +46,7 @@ shinyServer(function(input, output,session) {
     bedGRList
   })
   
+  ##Create list of bigWig files
   bwList<-reactive({
     bwList<-list()
     if(length(input$bwFiles>0)){
@@ -43,6 +60,7 @@ shinyServer(function(input, output,session) {
     bwList
   })
   
+  ##Output list of files under input directory
   get_input_files<-eventReactive(input$list_dir, {
       uilist<-tagList(  
         checkboxGroupInput('bedFiles', 'Select bed files (.bed):',get_files(pattern="*.bed$")),
@@ -52,13 +70,14 @@ shinyServer(function(input, output,session) {
       return(uilist)
   })
   
+  ##Set ui for selecting files
   output$inFiles <- renderUI({
     withProgress(message="Loading...",value=0,{
       get_input_files()
     })
   })
   
-  ##Reduce filenames to labels
+  ##Save labels for filenames
   observeEvent(input$saveLabels,{ 
     if(!is.null(input$bedFiles)){
       for(i in 1:length(input$bedFiles)){
@@ -77,6 +96,7 @@ shinyServer(function(input, output,session) {
     }
   })
   
+  ##function to generate label names
   lname<-function(n){
     if(!is.null(values$label_list[[n]])){
       return(values$label_list[[n]])
@@ -86,6 +106,7 @@ shinyServer(function(input, output,session) {
     }
   }
   
+  ##Create the labeling UI
   output$labels<-renderUI({
     if(is.null(input$bedFiles) & is.null(input$rdsFiles) & is.null(input$bwFiles)){
       return(NULL)
@@ -122,6 +143,7 @@ shinyServer(function(input, output,session) {
     )
   })
   
+  ##R code to apply to selected bed/GR object
   rCode<-reactive({
     gr<-bedGRList()[[input$bedIn]]
     if(input$apply_code){
@@ -138,6 +160,7 @@ shinyServer(function(input, output,session) {
     gr
   })
   
+  ##Render table of GR/Bed regions
   output$table<-renderDataTable({
     if(is.null(input$bedFiles) & is.null(input$rdsFiles)){
       return(NULL)
@@ -148,6 +171,7 @@ shinyServer(function(input, output,session) {
   },options = list(bSortClasses = TRUE,aLengthMenu = c(5,10,20,50,100), iDisplayLength = 5)
   )
   
+  ##Save the displayed table as a granges .rds object
   observeEvent(input$save, {
     gr<-rCode()
     name<-paste0(input$dir,"/",input$save_name,"gr.rds")

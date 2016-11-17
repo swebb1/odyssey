@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyFiles)
 library(genomation)
 library(GenomicRanges)
 library(GenomicFeatures)
