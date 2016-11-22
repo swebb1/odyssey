@@ -351,7 +351,8 @@ shinyServer(function(input, output,session) {
                     ) ##need to add labels
       }
       else{
-        plotHeatmap(plotset,labels = labels())
+        plotHeatmap(plotset)
+        #plotHeatmap(plotset,labels = labels()) #need to fix labels
       }
     }
   })

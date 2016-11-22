@@ -24,8 +24,6 @@ shinyUI(dashboardPage(
                fluidRow(
                  box(
                    title="Load Files",width = NULL,status="primary",solidHeader=TRUE,
-                   #htmlOutput("fileUI"),
-                   #fileInput("file", "Input File",multiple = FALSE) ##May add upload file option)
                    #textInput("dir","Select file directory:",value="/homes/swebb/interactive_plotting/odyssey/inst/odyssey/test_data"),
                    #textInput("dir","Select file directory:",value=wd),
                    shinyDirButton('directory',"Choose directory","Choose directory"),
