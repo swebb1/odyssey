@@ -82,7 +82,7 @@ shinyUI(dashboardPage(
                box(
                  title="Seqplots",width = 9,status="primary",solidHeader=TRUE,
                  plotOutput("seqplots_plot"),
-                 downloadLink('seqlink')  
+                 actionButton("seqplots_plot","Plot",icon = shiny::icon("play"))
                ),
                tabBox(
                  width = 3,
@@ -123,6 +123,12 @@ shinyUI(dashboardPage(
                               numericInput("seqplots_point","Plot point size",12)
                           )
                  )
+               ),
+               box(
+                 title="Save",width = 9,status="warning",solidHeader=TRUE,
+                 textInput("seqplotName","Save as:","Seqplots"),
+                 radioButtons("sftype",label = "Filetype",inline = T,choices=c("png","pdf")),
+                 downloadLink('seqlink')  
                )
              )
      )

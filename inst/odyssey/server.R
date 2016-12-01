@@ -29,7 +29,7 @@ shinyServer(function(input, output,session) {
     bedGRList<-list()
     if(length(input$bedFiles>0)){
       for(i in 1:length(input$bedFiles)){
-        #b<-readGeneric(input$bedFiles[i],keep.all.metadata = T,header = T)  ##Maybe switch to read generic???
+        #b<-readGeneric(input$bedFiles[i],keep.all.metadata = T,header = F,strand = 6)  ##Maybe switch to read generic???
         b<-readBed(input$bedFiles[i])
         if(is.null(values$label_list[[input$bedFiles[i]]])){values$label_list[[input$bedFiles[i]]]<-basename(input$bedFiles[i])}
         n<-values$label_list[[input$bedFiles[i]]]
@@ -277,9 +277,7 @@ shinyServer(function(input, output,session) {
         helpText("Separate multiple motifs with a comma."),
         numericInput("seqplots_window","Window size",value = 200),
         checkboxInput("seqplots_revcomp","Include reverse complement",value = T)
-      ),
-      actionButton("seqplots_plot","Plot",icon = shiny::icon("play")),
-      textInput("seqplotName","Save as:","Seqplots")
+      )
       )
   })
   
@@ -364,9 +362,14 @@ shinyServer(function(input, output,session) {
   })
   
   output$seqlink <- downloadHandler(
-    filename = function(){paste0(input$seqplotName,".png")},
+    filename = function(){paste0(input$seqplotName,".",input$sftype)},
     content = function(file) {
-      png(file,height = 600,width=900)
+      if(input$sftype=="png"){
+        png(file,height = 600,width=900)
+      }
+      else{
+        pdf(file,height = 6,width=9)
+      }
       seqplots_plot()
       dev.off()
     }
