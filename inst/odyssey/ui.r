@@ -81,7 +81,8 @@ shinyUI(dashboardPage(
              fluidRow(
                box(
                  title="Seqplots",width = 9,status="primary",solidHeader=TRUE,
-                 plotOutput("seqplots_plot")
+                 plotOutput("seqplots_plot"),
+                 downloadLink('seqlink')  
                ),
                tabBox(
                  width = 3,

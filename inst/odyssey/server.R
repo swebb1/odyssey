@@ -6,8 +6,9 @@ shinyServer(function(input, output,session) {
   
   ##Get the input directory
   #roots=c(home = '/homes/')
-  roots=c(home= '~')
-  shinyDirChoose(input, 'directory', roots = roots)
+  home_dir<-Sys.getenv("HOME")
+  roots=c(home= home_dir,wd=".")
+  shinyDirChoose(input, 'directory',roots=roots)
   input_dir <- reactive({
     id<-""
     if(!is.null(input$directory)){
@@ -277,8 +278,9 @@ shinyServer(function(input, output,session) {
         numericInput("seqplots_window","Window size",value = 200),
         checkboxInput("seqplots_revcomp","Include reverse complement",value = T)
       ),
-      actionButton("seqplots_plot","Plot",icon = shiny::icon("play"))
-    )
+      actionButton("seqplots_plot","Plot",icon = shiny::icon("play")),
+      textInput("seqplotName","Save as:","Seqplots")
+      )
   })
   
   getPlotSet<-eventReactive(input$seqplots_plot,{
@@ -328,7 +330,7 @@ shinyServer(function(input, output,session) {
     return(labels)
   })
   
-  output$seqplots_plot<-renderPlot({
+  seqplots_plot<-function(){
     if(is.null(getPlotSet())){#(length(input$seqplots_bedIn)==0 | length(input$seqplots_bwIn)==0 & input$seqplots_motif==F){
       return(NULL)
     }
@@ -355,8 +357,22 @@ shinyServer(function(input, output,session) {
         #plotHeatmap(plotset,labels = labels()) #need to fix labels
       }
     }
+  }
+  
+  output$seqplots_plot<-renderPlot({
+    seqplots_plot()
   })
-    
+  
+  output$seqlink <- downloadHandler(
+    filename = function(){paste0(input$seqplotName,".png")},
+    content = function(file) {
+      png(file,height = 600,width=900)
+      seqplots_plot()
+      dev.off()
+    }
+  )
+  
+  
 })    
 
 
