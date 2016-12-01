@@ -24,7 +24,7 @@ genomes<-c("sacCer3","hg19","mm9")
 #chrs_global[["mm9"]]=c(Seqinfo(genome="mm9")@seqnames)
 
 
-library(biomaRt)
-ensembl67 <- useMart(host='may2012.archive.ensembl.org',
-                     biomart='ENSEMBL_MART_ENSEMBL') #uses ensemble67 build
-ensembl67 <- useDataset("mmusculus_gene_ensembl", mart=ensembl67)
+#library(biomaRt)
+#ensembl67 <- useMart(host='may2012.archive.ensembl.org',
+#                     biomart='ENSEMBL_MART_ENSEMBL') #uses ensemble67 build
+#ensembl67 <- useDataset("mmusculus_gene_ensembl", mart=ensembl67)

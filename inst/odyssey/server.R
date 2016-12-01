@@ -175,7 +175,7 @@ shinyServer(function(input, output,session) {
   ##Save the displayed table as a granges .rds object
   observeEvent(input$save, {
     gr<-rCode()
-    name<-paste0(input$dir,"/",input$save_name,"gr.rds")
+    name<-paste0(input_dir(),"/",input$save_name,".gr.rds")
     saveRDS(gr,name)
     files<-c(input$rdsFiles,name)
     updateCheckboxGroupInput(session,inputId="rdsFiles",choices=files,selected=files)
