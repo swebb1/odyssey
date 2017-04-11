@@ -10,7 +10,7 @@ shinyUI(dashboardPage(
         #sidebarSearchForm(textId = "searchText", buttonId = "searchButton",label = "Search..."),
         menuItem("Files",tabName="files",icon=shiny::icon("upload")),
         menuItem("View Intervals",tabName="data",icon=shiny::icon("database")),
-        menuItem("IdeoViz",tabName="ideoviz",icon=shiny::icon("line-chart")),
+        #menuItem("IdeoViz",tabName="ideoviz",icon=shiny::icon("line-chart")),
         menuItem("Gviz",tabName="gviz",icon=shiny::icon("line-chart")),
         menuItem("Seqplots",tabName="seqplots",icon=shiny::icon("line-chart")),
         menuItem("Genomation",tabName="genomation",icon=shiny::icon("line-chart")),
@@ -23,7 +23,7 @@ shinyUI(dashboardPage(
      tabItem(tabName="files",
                fluidRow(
                  box(
-                   title="Load Files",width = NULL,status="primary",solidHeader=TRUE,
+                   title="Load Files",width = 12,status="primary",solidHeader=TRUE,
                    #textInput("dir","Select file directory:",value="/homes/swebb/interactive_plotting/odyssey/inst/odyssey/test_data"),
                    #textInput("dir","Select file directory:",value=wd),
                    shinyDirButton('directory',"Choose directory","Choose directory"),
@@ -32,11 +32,11 @@ shinyUI(dashboardPage(
                    actionButton("list_dir","List",icon = shiny::icon("folder-open"))
                  ),
                  box(
-                   title="Select files",width = NULL,status="warning",solidHeader=TRUE,
+                   title="Select files",width = 12,status="warning",solidHeader=TRUE,
                    uiOutput("inFiles")
                  ),
                  box(
-                   title="Relabel files",width = NULL,status="warning",solidHeader=TRUE,
+                   title="Relabel files",width = 12,status="warning",solidHeader=TRUE,
                    uiOutput("labels"),
                    actionButton("saveLabels","Save",icon = shiny::icon("refresh")),
                    textOutput("lsave")
@@ -46,8 +46,12 @@ shinyUI(dashboardPage(
      tabItem(tabName="data",
              fluidRow(
                box(
-                 title="Table",width = NULL,status="primary",solidHeader=TRUE,
+                 title="Table",width = 12,status="primary",solidHeader=TRUE,collapsed=F,collapsible = T,
                  div(style = 'overflow-x: scroll', dataTableOutput('table'))   
+               ),
+               box(
+                 title="Karyogram",width = 12,status="primary",solidHeader=TRUE,collapsed = T,collapsible=T,
+                 plotOutput('ideo')   
                ),
                box(
                  title="Data",width = 6,status="warning",solidHeader=TRUE,
@@ -57,7 +61,7 @@ shinyUI(dashboardPage(
                  ) 
                ),
                box(
-                 title="R Code",width = 6,status="danger",collapsible=TRUE,collapsed = TRUE,solidHeader=TRUE,
+                 title="Filters",width = 6,status="danger",collapsible=TRUE,collapsed = TRUE,solidHeader=TRUE,
                  #tags$textarea(id="code", rows=6, cols=40,""),
                  HTML('<textarea id="code" rows="3" cols="40"></textarea>'),
                  checkboxInput("apply_code",label = "Apply R code",value = F),
@@ -69,11 +73,24 @@ shinyUI(dashboardPage(
              fluidRow(
                box(
                  title="Gviz",width = 9,status="primary",solidHeader=TRUE,
-                 plotOutput("gviz_plot")   
+                 plotOutput("gviz_plot"),
+                 actionButton("gviz_plot","Plot",icon = shiny::icon("play"))
                ),
                box(
                  title="Controls",width = 3,status="warning",solidHeader=TRUE,
                  div(style = 'overflow-y: scroll',uiOutput("gviz_controls")) 
+               )
+             )
+     ),
+     tabItem(tabName="genomation",
+             fluidRow(
+               box(
+                 title="Genomation",width = 9,status="primary",solidHeader=TRUE,
+                 plotOutput("geno_plot")   
+               ),
+               box(
+                 title="Controls",width = 3,status="warning",solidHeader=TRUE,
+                 div(style = 'overflow-y: scroll',uiOutput("genomation_controls")) 
                )
              )
      ),

@@ -29,10 +29,10 @@ shinyServer(function(input, output,session) {
     bedGRList<-list()
     if(length(input$bedFiles>0)){
       for(i in 1:length(input$bedFiles)){
-        #b<-readGeneric(input$bedFiles[i],keep.all.metadata = T,header = F,strand = 6)  ##Maybe switch to read generic???
-        b<-readBed(input$bedFiles[i])
         if(is.null(values$label_list[[input$bedFiles[i]]])){values$label_list[[input$bedFiles[i]]]<-basename(input$bedFiles[i])}
         n<-values$label_list[[input$bedFiles[i]]]
+        #b<-readGeneric(input$bedFiles[i],keep.all.metadata = T,header = F,strand = 6)  ##Maybe switch to read generic???
+        b<-readBed(input$bedFiles[i])
         bedGRList[[n]]<-b
       }
     }
@@ -63,10 +63,13 @@ shinyServer(function(input, output,session) {
   
   ##Output list of files under input directory
   get_input_files<-eventReactive(input$list_dir, {
-      uilist<-tagList(  
-        checkboxGroupInput('bedFiles', 'Select bed files (.bed):',get_files(pattern="*.bed$")),
-        checkboxGroupInput('rdsFiles', 'Select R files (.rds):',get_files(pattern="*.gr.rds$")),
-        checkboxGroupInput('bwFiles', 'Select bigWig files (.bw):',get_files(pattern="*.bw$"))
+      uilist<-tagList(
+        checkboxGroupInput('bedFiles', 'Select genome interval files (.bed):',get_files(pattern="*.bed$")),
+        img(src='intervals.png', align = "left",height=25,width=500,bottom=20),
+        checkboxGroupInput('rdsFiles', 'Select genomicRanges R files (.gr.rds):',get_files(pattern="*.gr.rds$")),
+        img(src='intervals.png', align = "left",height=25,width=500,bottom=20),
+        checkboxGroupInput('bwFiles', 'Select genomic profile files (.bw):',get_files(pattern="*.bw$")),
+        img(src='bigwig.png', align = "left",height=50,width=500,bottom=20)
       )
       return(uilist)
   })
@@ -172,6 +175,18 @@ shinyServer(function(input, output,session) {
   },options = list(bSortClasses = TRUE,aLengthMenu = c(5,10,20,50,100), iDisplayLength = 5)
   )
   
+  ##Display ideogram
+  output$ideo<-renderPlot({
+    if(is.null(input$bedFiles) & is.null(input$rdsFiles)){
+      return(NULL)
+    }
+    gr<-rCode()
+    data(hg19Ideogram, package = "biovizBase")
+    seqlengths(gr) <- seqlengths(hg19Ideogram)[names(seqlengths(gr))]
+    gr <- keepSeqlevels(gr, paste0("chr", c(1:22, "X")))
+    autoplot(gr, layout = "karyogram",color="dodger blue")
+  })
+  
   ##Save the displayed table as a granges .rds object
   observeEvent(input$save, {
     gr<-rCode()
@@ -224,7 +239,8 @@ shinyServer(function(input, output,session) {
     )
   })
   
-  output$gviz_plot<-renderPlot({
+  getGviz<-eventReactive(input$gviz_plot,{
+    withProgress(message="Plotting...",value=0,{
     gtrack <- GenomeAxisTrack(fontsize=15)
     ideoTrack <- IdeogramTrack(genome =input$gviz_genome)
     if(input$gviz_select=="Coordinates"){
@@ -243,8 +259,12 @@ shinyServer(function(input, output,session) {
     bw_list<- bwList()
     if(length(input$gviz_bedIn>0)){
       for(i in 1:length(input$gviz_bedIn)){
+        id=1:length(blist[[basename(input$gviz_bedIn[i])]])
+        if(!is.null(blist[[basename(input$gviz_bedIn[i])]]$name)){
+          id=blist[[basename(input$gviz_bedIn[i])]]$name
+        }
         btrack<-AnnotationTrack(blist[[basename(input$gviz_bedIn[i])]],name=basename((input$gviz_bedIn[i])),
-                                showFeatureId=T,showOverplotting=T,just.group="above")
+                                showFeatureId=T,showOverplotting=T,just.group="above",id=id)
         tracks<-c(tracks,btrack)
       }
     }
@@ -257,12 +277,49 @@ shinyServer(function(input, output,session) {
     }
     #DataTrack(range=cgcf,genome="mm9",name="mCG %",fontsize=15,type="mountain",col.mountain="blue",fill.mountain=c("green","grey"),ylim=c(0,100))
     if(input$gviz_select=="Coordinates"){
-      plotTracks(tracks,from = input$gviz_start, to=input$gviz_end,chromosome = biomTrack@chromosome)
+      plotTracks(tracks,from = input$gviz_start, to=input$gviz_end,chromosome = biomTrack@chromosome,background.title="#40464C")
     }
     else{
-      plotTracks(tracks,from = biomTrack@start-input$gviz_left, to=biomTrack@end+input$gviz_right,chromosome = biomTrack@chromosome)
+      plotTracks(tracks,from = biomTrack@start-input$gviz_left, to=biomTrack@end+input$gviz_right,chromosome = biomTrack@chromosome,background.title="#40464C")
     }
+    })
+    })
+  
+  output$gviz_plot<-renderPlot({
+    getGviz()
   })    
+  
+  ##Annotation
+  output$genomation_controls<-renderUI({
+    tagList(
+      selectInput("geno_mode","Select annotation mode:",choices=c("Overlap","Overlap by gene","Average")),
+      selectInput("geno_genome","Select genome:",choices=genomes),
+      conditionalPanel(condition="input.geno_mode == 'Overlap'",
+        selectInput("geno_bedIn","Select regions to annotate",choices = names(bedGRList()),multiple = F),
+        checkboxInput("geno_genes","Use gene parts",value = F),
+        selectInput("geno_bedFeature","Select features",choices = names(bedGRList()),multiple=F),
+        selectInput("geno_bwIn","Select signal files",choices =names(bwList()),multiple=T)
+      )
+    )
+  })
+  
+  output$geno_plot<-renderPlot({
+    blist <- bedGRList()
+    bw_list<- bwList()
+    col<-brewer.pal(name = "Paired",n=12)
+    if(input$geno_mode=="Overlap"){
+        ##Need to figure out how to read in bed12 as gene parts, probably checkbox in labels section
+        if(input$geno_genes){
+          a<- genomation::annotateWithGeneParts(blist[[basename(input$geno_bedIn)]],blist[[basename(input$geno_bedFeature)]] , intersect.chr = TRUE,feature.name =basename(input$geno_bedFeature) )
+          genomation::plotGeneAnnotation(a,col=col,main=basename(input$geno_bedIn),precedence=T,cluster=F)
+        }
+        else{
+          a<-genomation::annotateWithFeature(blist[[basename(input$geno_bedIn)]],blist[[basename(input$geno_bedFeature)]] , intersect.chr = TRUE,feature.name =basename(input$geno_bedFeature) )
+          genomation::plotTargetAnnotation(a,col=col,main=basename(input$geno_bedIn))
+        }
+    }
+  })
+  
   
   ##SeqPlots
   output$seqplots_controls<-renderUI({

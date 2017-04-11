@@ -6,6 +6,8 @@ library(GenomicFeatures)
 library(seqplots)
 library(IdeoViz)
 library(Gviz)
+library(ggbio)
+library(biovizBase)
 library(RColorBrewer)
 library(htmltools)
 
